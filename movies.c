@@ -22,6 +22,16 @@ struct movie* process_file(char*);
 struct movie* create_movie(char*);
 struct language* process_languages(char*);
 struct language* create_language(char*);
+void prompt_search();
+int get_choice();
+int check_choice(char*);
+
+// potentially not useful functions
+void print_list(struct movie*);
+void print_movie(struct movie*);
+
+
+
 
 int main(int argc, char* argv[]) {
 
@@ -30,13 +40,28 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
+    // process input file
     struct movie* movie_head = process_file(argv[1]);
 
-    printf("Movie 1 rating: %0.1f\n", movie_head->rating);
+    int user_choice = 0;
 
+    // operate searching functionality
+    do {
+        user_choice = get_choice();
+
+    }
+    while (user_choice != 4);
+    
+
+
+    // print_list(movie_head);
 
     return 0;
 }
+
+
+
+
 
 // function definitions
 struct movie* process_file(char* file_path) {
@@ -52,7 +77,7 @@ struct movie* process_file(char* file_path) {
     char* curr_line = NULL;
     size_t len = 0;
     ssize_t n_read;
-    int ctr = 0;
+    int ctr = -1;
 
     // head and tail of linked list
     struct movie* head = NULL;
@@ -65,13 +90,14 @@ struct movie* process_file(char* file_path) {
     while ((n_read = getline(&curr_line, &len, movies_file)) != -1) {
 
         // if this is the first line of the file, skip the rest of the loop
-        if (ctr == 0) {
+        if (ctr == -1) {
             ctr++;
             continue;
         }
 
         // get a new movie node corresponding to the current line
         new_node = create_movie(curr_line);
+        ctr++;
 
         // if this is the first movie in the list
         if (head == NULL) {
@@ -84,7 +110,10 @@ struct movie* process_file(char* file_path) {
             tail = new_node;
         }
     }
-    
+
+    // output file processed message
+    printf("\nProcessed file %s and parsed data for %d movies\n", file_path, ctr);
+
     // free dynamically allocated memory
     free(curr_line);
 
@@ -162,4 +191,56 @@ struct language* create_language(char* lang) {
     new_node->next = NULL;
 
     return new_node;
+}
+
+void print_list(struct movie* list) {
+    while (list != NULL) {
+        print_movie(list);
+        list = list->next;
+    }
+}
+
+void print_movie(struct movie* mov) {
+    printf("Title: %s\nYear: %d\nLanguages:\nRating: %0.1f\n\n", mov->title, mov->year, mov->rating);
+}
+
+void prompt_search() {
+    printf("\n1. Show movies released in the specified year\n");
+    printf("2. Show highest rated movie for each year\n");
+    printf("3. Show the title and year of release of all movies in a specific language\n");
+    printf("4. Exit the program\n");
+}
+
+int get_choice() {
+    char* line = NULL;
+    size_t len = 0;
+    ssize_t line_size = 0;
+
+    int choice = 0;
+
+    while (choice == 0) {
+        prompt_search();
+        printf("\nEnter a choice from 1-4: ");
+        line_size = getline(&line, &len, stdin);
+        choice = check_choice(line);
+
+        if (choice == 0) {
+            printf("You entered an incorrect choice. Try again.\n");
+        }
+    }
+    
+
+    free(line);
+    return choice;
+}
+
+int check_choice(char* line) {
+    int choice = atoi(line);
+    if (strlen(line) > 2)
+        return 0;
+    if ((choice < 1) || (choice > 4)) 
+        return 0;
+    
+
+    return choice;
 }
