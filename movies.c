@@ -25,6 +25,7 @@ struct language* create_language(char*);
 void prompt_search();
 int get_choice();
 int check_choice(char*);
+void display_movies_by_year(struct movie*);
 
 // potentially not useful functions
 void print_list(struct movie*);
@@ -49,6 +50,14 @@ int main(int argc, char* argv[]) {
     do {
         user_choice = get_choice();
 
+        switch (user_choice) {
+            case 1:
+                display_movies_by_year(movie_head);
+            case 2:
+            case 3:
+            case 4:
+                break;
+        }
     }
     while (user_choice != 4);
     
@@ -229,18 +238,37 @@ int get_choice() {
         }
     }
     
-
     free(line);
     return choice;
 }
 
 int check_choice(char* line) {
-    int choice = atoi(line);
     if (strlen(line) > 2)
         return 0;
+
+    int choice = atoi(line);
     if ((choice < 1) || (choice > 4)) 
         return 0;
     
-
     return choice;
+}
+
+void display_movies_by_year(struct movie* list) {
+    int year = get_year();
+
+    // now I need to search through the list and output all the movies that were released in the 
+    // specified year. If there were no movies released in that year, output message about that
+}
+
+int get_year() {
+    char* line = NULL;
+    size_t len = 0;
+    ssize_t line_size = 0;
+
+    printf("Enter the year for which you want to see movies: ");
+    line_size = getline(&line, &len, stdin);
+    
+    int year = atoi(line);
+
+    return year;
 }
