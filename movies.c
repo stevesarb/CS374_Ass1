@@ -13,7 +13,7 @@ struct movie {
     char* title;
     int year;
     struct language* langs_head;
-    float rating;
+    double rating;
     struct movie* next;
 };
 
@@ -31,6 +31,8 @@ int main(int argc, char* argv[]) {
     }
 
     struct movie* movie_head = process_file(argv[1]);
+
+    printf("Movie 1 rating: %0.1f\n", movie_head->rating);
 
 
     return 0;
@@ -111,6 +113,11 @@ struct movie* create_movie(char* curr_line) {
     // next token is the languages
     token = strtok_r(NULL, ",", &save_ptr);
     curr_movie->langs_head = process_languages(token);
+
+    // next token is the rating
+    token = strtok_r(NULL, ",", &save_ptr);
+    char* ptr;
+    curr_movie->rating = strtod(token, &ptr);
 
     return curr_movie;
 }
