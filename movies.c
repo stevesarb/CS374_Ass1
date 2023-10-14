@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    struct movie* list = process_file(argv[1]);
+    struct movie* movie_head = process_file(argv[1]);
 
 
     return 0;
@@ -56,6 +56,8 @@ struct movie* process_file(char* file_path) {
     struct movie* head = NULL;
     struct movie* tail = NULL;
 
+    struct movie* new_node = NULL;
+
 
     // read file line by line
     while ((n_read = getline(&curr_line, &len, movies_file)) != -1) {
@@ -67,7 +69,7 @@ struct movie* process_file(char* file_path) {
         }
 
         // get a new movie node corresponding to the current line
-        struct movie* new_node = create_movie(curr_line);
+        new_node = create_movie(curr_line);
 
         // if this is the first movie in the list
         if (head == NULL) {
@@ -110,6 +112,7 @@ struct movie* create_movie(char* curr_line) {
     token = strtok_r(NULL, ",", &save_ptr);
     curr_movie->langs_head = process_languages(token);
 
+    return curr_movie;
 }
 
 struct language* process_languages(char* langs) {
@@ -144,7 +147,11 @@ struct language* process_languages(char* langs) {
 struct language* create_language(char* lang) {
     struct language* new_node = malloc(sizeof(struct language));
 
-    new_node->lang = lang;
+    // allocate new dynamic memory to store the string into, because the string that 
+    // lang points to is going to be erased after the calling function ends
+    new_node->lang = calloc(strlen(lang) + 1, sizeof(char));
+    strcpy(new_node->lang, lang);
+
     new_node->next = NULL;
 
     return new_node;
