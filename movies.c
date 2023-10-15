@@ -26,10 +26,18 @@ void prompt_search();
 int get_choice();
 int check_choice(char*);
 void display_movies_by_year(struct movie*);
+void search_by_year(struct movie*, int, int*);
+void display_top_rated_by_year(struct movie*);
+
+void display_movies_by_language(struct movie*);
+char* get_lang();
+void search_by_language(struct movie*, char*, int*);
+int search_languages(struct language*, char*);
 
 // potentially not useful functions
 void print_list(struct movie*);
 void print_movie(struct movie*);
+void print_languages(struct language*);
 
 
 
@@ -53,8 +61,13 @@ int main(int argc, char* argv[]) {
         switch (user_choice) {
             case 1:
                 display_movies_by_year(movie_head);
+                break;
             case 2:
+                display_top_rated_by_year(movie_head);
+                break;
             case 3:
+                display_movies_by_language(movie_head);
+                break;
             case 4:
                 break;
         }
@@ -63,7 +76,7 @@ int main(int argc, char* argv[]) {
     
 
 
-    // print_list(movie_head);
+    print_list(movie_head);
 
     return 0;
 }
@@ -202,6 +215,10 @@ struct language* create_language(char* lang) {
     return new_node;
 }
 
+
+
+
+
 void print_list(struct movie* list) {
     while (list != NULL) {
         print_movie(list);
@@ -210,8 +227,22 @@ void print_list(struct movie* list) {
 }
 
 void print_movie(struct movie* mov) {
-    printf("Title: %s\nYear: %d\nLanguages:\nRating: %0.1f\n\n", mov->title, mov->year, mov->rating);
+    printf("Title: %s\nYear: %d\nLanguages:\n", mov->title, mov->year);
+    print_languages(mov->langs_head);
+    printf("Rating: %0.1f\n\n", mov->rating);
 }
+
+void print_languages(struct language* node) {
+    if (node != NULL) {
+        printf("    %s\n", node->lang);
+        print_languages(node->next); // recursive call
+    }
+}
+
+
+
+
+
 
 void prompt_search() {
     printf("\n1. Show movies released in the specified year\n");
@@ -256,8 +287,11 @@ int check_choice(char* line) {
 void display_movies_by_year(struct movie* list) {
     int year = get_year();
 
-    // now I need to search through the list and output all the movies that were released in the 
-    // specified year. If there were no movies released in that year, output message about that
+    // search through list to find movies of the specified year
+    int ctr = 0;
+    search_by_year(list, year, &ctr); // recursive function
+    if (ctr == 0) 
+        printf("No data about movies released in the year %d\n", year);
 }
 
 int get_year() {
@@ -267,8 +301,76 @@ int get_year() {
 
     printf("Enter the year for which you want to see movies: ");
     line_size = getline(&line, &len, stdin);
+
+    printf("line size: %d\n", line_size);
     
     int year = atoi(line);
 
     return year;
+}
+
+void search_by_year(struct movie* node, int year, int* ctr) {
+    if (node != NULL) {
+        if (node->year == year) {
+            printf("%s\n", node->title);
+            (*ctr)++;
+        }
+        search_by_year(node->next, year, ctr); // recursive call
+    }
+}
+
+void display_top_rated_by_year(struct movie* head) {
+
+}
+
+
+
+void display_movies_by_language(struct movie* head) {
+    char* lang = get_lang();
+
+    int ctr = 0;
+    search_by_language(head, lang, &ctr);
+    if (ctr == 0) 
+        printf("No data about movies released in %s\n", lang);
+
+    free(lang);
+}
+
+char* get_lang() {
+    char* line;
+    size_t len = 0;
+    ssize_t line_size = 0;
+
+    printf("Enter the language for which you want to see movies: ");
+    line_size = getline(&line, &len, stdin);
+
+    // I think the language I enter has a newline character appended to the end of it, causing it to fail my strcmp() attempts
+    // Solution: edit string (line) so that it doesn't have newline character at the end
+    printf("line size: %d\n", line_size);
+
+    char* lang = calloc(strlen(line) + 1, sizeof(char));
+    strcpy(lang, line);
+
+    return lang;
+}
+
+void search_by_language(struct movie* node, char* lang, int* ctr) {
+    if (node != NULL) {
+        int has_lang = search_languages(node->langs_head, lang);
+        if (has_lang != 0) {
+            printf("%s\n", node->title);
+            (*ctr)++;
+        }
+        search_by_language(node->next, lang, ctr); // recursive call
+    }
+}
+
+int search_languages(struct language* node, char* lang) {
+    if (node != NULL) {
+        if (strcmp(node->lang, lang) == 0) {
+            return 1;
+        }
+        int has_lang = search_languages(node->next, lang); // recursive call
+    }
+    return 0;
 }
