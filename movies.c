@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     
 
 
-    print_list(movie_head);
+    // print_list(movie_head);
 
     return 0;
 }
@@ -301,8 +301,6 @@ int get_year() {
 
     printf("Enter the year for which you want to see movies: ");
     line_size = getline(&line, &len, stdin);
-
-    printf("line size: %d\n", line_size);
     
     int year = atoi(line);
 
@@ -344,33 +342,32 @@ char* get_lang() {
     printf("Enter the language for which you want to see movies: ");
     line_size = getline(&line, &len, stdin);
 
-    // I think the language I enter has a newline character appended to the end of it, causing it to fail my strcmp() attempts
-    // Solution: edit string (line) so that it doesn't have newline character at the end
-    printf("line size: %d\n", line_size);
-
-    char* lang = calloc(strlen(line) + 1, sizeof(char));
-    strcpy(lang, line);
+    char* lang = calloc(strlen(line), sizeof(char));
+    strncpy(lang, line, line_size - 1); // eliminates the newline character that's stored in the input string
 
     return lang;
 }
 
+// recursive function that searches through linked list of movies
 void search_by_language(struct movie* node, char* lang, int* ctr) {
     if (node != NULL) {
         int has_lang = search_languages(node->langs_head, lang);
         if (has_lang != 0) {
-            printf("%s\n", node->title);
+            printf("%d %s\n", node->year, node->title);
             (*ctr)++;
         }
         search_by_language(node->next, lang, ctr); // recursive call
     }
 }
 
+// recursive function that searches through linked list of languages for each movie
 int search_languages(struct language* node, char* lang) {
+    int has_lang = 0;
     if (node != NULL) {
         if (strcmp(node->lang, lang) == 0) {
             return 1;
         }
-        int has_lang = search_languages(node->next, lang); // recursive call
+        has_lang = search_languages(node->next, lang); // recursive call
     }
-    return 0;
+    return has_lang;
 }
