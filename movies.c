@@ -4,40 +4,49 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct language {
-    char* lang;
-    struct language* next;
+const int DEBUG_MODE = 0;
+
+struct Movies_By_Distinct_Year {
+    struct Movie* mov;
+    struct Movies_By_Distinct_Year* next;
 };
 
-struct movie {
+struct Language {
+    char* lang;
+    struct Language* next;
+};
+
+struct Movie {
     char* title;
     int year;
-    struct language* langs_head;
+    struct Language* langs_head;
     double rating;
-    struct movie* next;
+    struct Movie* next;
 };
 
 // function declarations
-struct movie* process_file(char*);
-struct movie* create_movie(char*);
-struct language* process_languages(char*);
-struct language* create_language(char*);
+struct Movie* process_file(char*);
+struct Movie* create_movie(char*);
+struct Language* process_languages(char*);
+struct Language* create_language(char*);
 void prompt_search();
 int get_choice();
 int check_choice(char*);
-void display_movies_by_year(struct movie*);
-void search_by_year(struct movie*, int, int*);
-void display_top_rated_by_year(struct movie*);
-
-void display_movies_by_language(struct movie*);
+void display_movies_by_year(struct Movie*);
+void search_by_year(struct Movie*, int, int*);
+void display_top_rated_by_year(struct Movie*);
+void check_for_same_year(struct Movie*, struct Movies_By_Distinct_Year*);
+void display_movies_by_language(struct Movie*);
 char* get_lang();
-void search_by_language(struct movie*, char*, int*);
-int search_languages(struct language*, char*);
+void search_by_language(struct Movie*, char*, int*);
+int search_languages(struct Language*, char*);
+void free_distinct_year_list(struct Movies_By_Distinct_Year*);
+void free_movie_list(struct Movie*);
 
-// potentially not useful functions
-void print_list(struct movie*);
-void print_movie(struct movie*);
-void print_languages(struct language*);
+// debugging functions
+void print_list(struct Movie*);
+void print_movie(struct Movie*);
+void print_languages(struct Language*);
 
 
 
@@ -50,7 +59,7 @@ int main(int argc, char* argv[]) {
     }
 
     // process input file
-    struct movie* movie_head = process_file(argv[1]);
+    struct Movie* movie_head = process_file(argv[1]);
 
     int user_choice = 0;
 
@@ -74,19 +83,23 @@ int main(int argc, char* argv[]) {
     }
     while (user_choice != 4);
     
+    // debugging functionality
+    if (DEBUG_MODE == 1)
+        print_list(movie_head);
 
-
-    // print_list(movie_head);
-
+    // free movie list
+    free_movie_list(movie_head);
+    
     return 0;
 }
 
 
 
-
-
+//
 // function definitions
-struct movie* process_file(char* file_path) {
+//
+
+struct Movie* process_file(char* file_path) {
     // open file for reading only
     FILE* movies_file = fopen(file_path, "r");
 
@@ -102,10 +115,10 @@ struct movie* process_file(char* file_path) {
     int ctr = -1;
 
     // head and tail of linked list
-    struct movie* head = NULL;
-    struct movie* tail = NULL;
+    struct Movie* head = NULL;
+    struct Movie* tail = NULL;
 
-    struct movie* new_node = NULL;
+    struct Movie* new_node = NULL;
 
 
     // read file line by line
@@ -145,9 +158,9 @@ struct movie* process_file(char* file_path) {
     return head;
 }
 
-struct movie* create_movie(char* curr_line) {
+struct Movie* create_movie(char* curr_line) {
     // dynamically allocate memory for a new movie struct
-    struct movie* curr_movie = malloc(sizeof(struct movie));
+    struct Movie* curr_movie = malloc(sizeof(struct Movie));
 
     // for use with strtok_r
     char* save_ptr;
@@ -173,18 +186,18 @@ struct movie* create_movie(char* curr_line) {
     return curr_movie;
 }
 
-struct language* process_languages(char* langs) {
+struct Language* process_languages(char* langs) {
     // temp variable for strtok_r
     char* temp_str;
 
     // variables for languages linked list
-    struct language* head = NULL;
-    struct language* tail = NULL;
+    struct Language* head = NULL;
+    struct Language* tail = NULL;
     
     // get first language from string
     char* token = strtok_r(langs, "[;]", &temp_str);
     // add that language to languages linked list
-    struct language* new_node = create_language(token);
+    struct Language* new_node = create_language(token);
     head = new_node;
     tail = new_node;
 
@@ -202,8 +215,8 @@ struct language* process_languages(char* langs) {
     return head;
 }
 
-struct language* create_language(char* lang) {
-    struct language* new_node = malloc(sizeof(struct language));
+struct Language* create_language(char* lang) {
+    struct Language* new_node = malloc(sizeof(struct Language));
 
     // allocate new dynamic memory to store the string into, because the string that 
     // lang points to is going to be erased after the calling function ends
@@ -214,35 +227,6 @@ struct language* create_language(char* lang) {
 
     return new_node;
 }
-
-
-
-
-
-void print_list(struct movie* list) {
-    while (list != NULL) {
-        print_movie(list);
-        list = list->next;
-    }
-}
-
-void print_movie(struct movie* mov) {
-    printf("Title: %s\nYear: %d\nLanguages:\n", mov->title, mov->year);
-    print_languages(mov->langs_head);
-    printf("Rating: %0.1f\n\n", mov->rating);
-}
-
-void print_languages(struct language* node) {
-    if (node != NULL) {
-        printf("    %s\n", node->lang);
-        print_languages(node->next); // recursive call
-    }
-}
-
-
-
-
-
 
 void prompt_search() {
     printf("\n1. Show movies released in the specified year\n");
@@ -284,7 +268,7 @@ int check_choice(char* line) {
     return choice;
 }
 
-void display_movies_by_year(struct movie* list) {
+void display_movies_by_year(struct Movie* list) {
     int year = get_year();
 
     // search through list to find movies of the specified year
@@ -307,7 +291,7 @@ int get_year() {
     return year;
 }
 
-void search_by_year(struct movie* node, int year, int* ctr) {
+void search_by_year(struct Movie* node, int year, int* ctr) {
     if (node != NULL) {
         if (node->year == year) {
             printf("%s\n", node->title);
@@ -317,13 +301,61 @@ void search_by_year(struct movie* node, int year, int* ctr) {
     }
 }
 
-void display_top_rated_by_year(struct movie* head) {
+void display_top_rated_by_year(struct Movie* mov_head) {
+    // initialize linked list to use to keep track of pointers that correspond to the top rated movie of each year
+    struct Movies_By_Distinct_Year* head = malloc(sizeof(struct Movies_By_Distinct_Year));
+    struct Movies_By_Distinct_Year* curr_distinct = head;
+    head->mov = mov_head;
+    head->next = NULL;
+    struct Movie* curr = mov_head->next;
 
+    while (curr != NULL) {
+        // check if curr (current movie in movie list) has the same year a movie pointed to by any node in years linked list
+        check_for_same_year(curr, head);
+        curr = curr->next;
+    }
+
+    // print Movies by distinct year list
+    while (curr_distinct != NULL) {
+        printf("%d %0.1f %s\n", curr_distinct->mov->year, curr_distinct->mov->rating, curr_distinct->mov->title);
+        curr_distinct = curr_distinct->next;
+    }
+
+    // free movies by distinct year list
+    free_distinct_year_list(head);
+}
+
+void check_for_same_year(struct Movie* curr, struct Movies_By_Distinct_Year* node) {
+    int has_year = 0;
+    struct Movies_By_Distinct_Year* last = node;
+
+    // iterate through the whole list of movies by distict year
+    while (node != NULL) {
+        // if there is already a movie of the same year in the list
+        if (curr->year == node->mov->year) {
+            has_year = 1;
+            // compare their ratings
+            if (curr->rating > node->mov->rating) {
+                node->mov = curr;
+            }
+        }
+        // advance pointers
+        if (node->next != NULL)
+            last = node->next;
+        node = node->next;
+    }
+
+    if (has_year == 0) {
+        // add new node to list and have it point to the current movie
+        last->next = malloc(sizeof(struct Movies_By_Distinct_Year));
+        last = last->next;
+        last->mov = curr;
+        last->next = NULL;
+    }
 }
 
 
-
-void display_movies_by_language(struct movie* head) {
+void display_movies_by_language(struct Movie* head) {
     char* lang = get_lang();
 
     int ctr = 0;
@@ -349,7 +381,7 @@ char* get_lang() {
 }
 
 // recursive function that searches through linked list of movies
-void search_by_language(struct movie* node, char* lang, int* ctr) {
+void search_by_language(struct Movie* node, char* lang, int* ctr) {
     if (node != NULL) {
         int has_lang = search_languages(node->langs_head, lang);
         if (has_lang != 0) {
@@ -361,7 +393,7 @@ void search_by_language(struct movie* node, char* lang, int* ctr) {
 }
 
 // recursive function that searches through linked list of languages for each movie
-int search_languages(struct language* node, char* lang) {
+int search_languages(struct Language* node, char* lang) {
     int has_lang = 0;
     if (node != NULL) {
         if (strcmp(node->lang, lang) == 0) {
@@ -370,4 +402,44 @@ int search_languages(struct language* node, char* lang) {
         has_lang = search_languages(node->next, lang); // recursive call
     }
     return has_lang;
+}
+
+void free_distinct_year_list(struct Movies_By_Distinct_Year* node) {
+    if (node->next != NULL) {
+        free_distinct_year_list(node->next);
+    }
+    free(node);
+}
+
+void free_movie_list(struct Movie* node) {
+    if (node->next != NULL) {
+        free_movie_list(node->next);
+    }
+    free(node);
+}
+
+
+
+
+
+
+
+void print_list(struct Movie* list) {
+    while (list != NULL) {
+        print_movie(list);
+        list = list->next;
+    }
+}
+
+void print_movie(struct Movie* mov) {
+    printf("Title: %s\nYear: %d\nLanguages:\n", mov->title, mov->year);
+    print_languages(mov->langs_head);
+    printf("Rating: %0.1f\n\n", mov->rating);
+}
+
+void print_languages(struct Language* node) {
+    if (node != NULL) {
+        printf("    %s\n", node->lang);
+        print_languages(node->next); // recursive call
+    }
 }
