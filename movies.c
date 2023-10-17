@@ -42,6 +42,7 @@ void search_by_language(struct Movie*, char*, int*);
 int search_languages(struct Language*, char*);
 void free_distinct_year_list(struct Movies_By_Distinct_Year*);
 void free_movie_list(struct Movie*);
+void free_languages(struct Language*);
 
 // debugging functions
 void print_list(struct Movie*);
@@ -288,6 +289,8 @@ int get_year() {
     
     int year = atoi(line);
 
+    free(line);
+
     return year;
 }
 
@@ -377,6 +380,8 @@ char* get_lang() {
     char* lang = calloc(strlen(line), sizeof(char));
     strncpy(lang, line, line_size - 1); // eliminates the newline character that's stored in the input string
 
+    free(line);
+
     return lang;
 }
 
@@ -415,6 +420,16 @@ void free_movie_list(struct Movie* node) {
     if (node->next != NULL) {
         free_movie_list(node->next);
     }
+    free(node->title);
+    free_languages(node->langs_head);
+    free(node);
+}
+
+void free_languages(struct Language* node) {
+    if (node->next != NULL) {
+        free_languages(node->next);
+    }
+    free(node->lang);
     free(node);
 }
 
